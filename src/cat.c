@@ -49,7 +49,7 @@ GET_IMG(cat_tap_bd_img);
 GET_IMG(cat_tap_brd_img);
 GET_IMG(cat_tap_bld_img);
 
-static const lv_img_dsc_t *cat_idle_img[] = {
+static const lv_image_dsc_t *cat_idle_img[] = {
     &cat_idle_1_img,
     &cat_idle_2_img,
     &cat_idle_3_img,
@@ -113,37 +113,38 @@ static void update_cat_img(cat_state_t state)
 }
 
 static cat_state_t update_cat_state(cat_state_t state) {
-    static int64_t last = 0;
+    /* Time at which the current state was entered (by timeout or button). */
+    static int64_t state_since = 0;
     int64_t now = k_uptime_get();
+    int64_t in_state = now - state_since;
     button_event_t evt;
     cat_state_t next_state = state;
 
-    if (now - last >= CAT_HIT_MS) {
-        switch (next_state) {
-        case CAT_TAP_L:
-            last = now;
+    switch (next_state) {
+    case CAT_TAP_L:
+        if (in_state >= CAT_HIT_MS) {
             next_state = CAT_TAP_LD;
-            break;
-        case CAT_TAP_R:
-            last = now;
-            next_state = CAT_TAP_RD;
-            break;
-        case CAT_TAP_B:
-        case CAT_TAP_BRD:
-        case CAT_TAP_BLD:
-            last = now;
-            next_state = CAT_TAP_BD;
-            break;
-        default:
-            break;
         }
-    }
-
-    if (now - last >= CAT_PREP_MS) {
-        if (next_state == CAT_PREP) {
-            last = now;
+        break;
+    case CAT_TAP_R:
+        if (in_state >= CAT_HIT_MS) {
+            next_state = CAT_TAP_RD;
+        }
+        break;
+    case CAT_TAP_B:
+    case CAT_TAP_BRD:
+    case CAT_TAP_BLD:
+        if (in_state >= CAT_HIT_MS) {
+            next_state = CAT_TAP_BD;
+        }
+        break;
+    case CAT_PREP:
+        if (in_state >= CAT_PREP_MS) {
             next_state = CAT_IDLE;
         }
+        break;
+    default:
+        break;
     }
 
     while (button_get(&evt) == 0) {
@@ -236,6 +237,10 @@ static cat_state_t update_cat_state(cat_state_t state) {
         default:
             break;
         }
+    }
+
+    if (next_state != state) {
+        state_since = now;
     }
 
     return next_state;

@@ -9,13 +9,17 @@
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
-#define INACTIVITY_SLEEP_MS (5UL * 1000UL)
-
 static lv_obj_t *heart_count_label;
 
 static void update_label(void)
 {
-    lv_label_set_text_fmt(heart_count_label, "%d", heart_get_count());
+    static uint32_t shown_count = 0;
+    uint32_t count = heart_get_count();
+
+    if (count != shown_count) {
+        shown_count = count;
+        lv_label_set_text_fmt(heart_count_label, "%u", count);
+    }
 }
 
 static void init(void)
@@ -39,16 +43,16 @@ int main(void)
 
     while (1) {
         int64_t now = k_uptime_get();
-        if (now - last >= 1000) {
+        if (now - last >= CONFIG_APP_HEARTBEAT_INTERVAL_MS) {
             last = now;
-            LOG_INF("ALIVE");
+            LOG_DBG("ALIVE");
         }
-        if (now - last_activity >= INACTIVITY_SLEEP_MS) {
+        if (now - last_activity >= CONFIG_APP_INACTIVITY_SLEEP_MS) {
             const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
             if (device_is_ready(display_dev)) {
                 int ret = display_blanking_on(display_dev);
                 if (ret < 0) {
-                    LOG_INF("Failed to turn on display blanking");
+                    LOG_WRN("Failed to turn on display blanking (%d)", ret);
                 }
             }
             k_msleep(100); // Give some time for the display to blank before powering off

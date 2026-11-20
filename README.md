@@ -1,6 +1,40 @@
-# Zephyr App Template
+# Zephyr Bongo Cat
 
-最小化的 Zephyr freestanding application 模板，搭配 [just](https://just.systems) 管理 build / flash。
+在 ESP32-C3 SuperMini + 128×64 OLED 上跑的 Bongo Cat：按左／右鍵貓咪就拍桌、冒出愛心，
+畫面左上角累計拍擊次數。一段時間沒操作會關閉螢幕並 power off，按任一鍵喚醒。
+
+以 Zephyr + LVGL 實作，使用 [just](https://just.systems) 管理 build / flash。
+
+## 硬體接線
+
+| 元件             | 腳位                       |
+| ---------------- | -------------------------- |
+| OLED SH1106 (I2C, 0x3C) | SDA = GPIO3, SCL = GPIO4 |
+| 左鍵             | GPIO1（接 GND，內部上拉）  |
+| 右鍵             | GPIO2（接 GND，內部上拉）  |
+
+設定見 `boards/esp32c3_supermini.overlay`。
+
+## 程式結構
+
+| 檔案           | 說明                                              |
+| -------------- | ------------------------------------------------- |
+| `src/main.c`   | 主迴圈：LVGL、閒置計時與 power off               |
+| `src/button.c` | Input callback → message queue                   |
+| `src/cat.c`    | 貓咪狀態機（idle / prep / 左拍 / 右拍 / 雙拍）   |
+| `src/heart.c`  | 愛心動畫與計數                                    |
+| `src/bitmap.c` | 所有 I1 格式圖檔                                  |
+
+## App 設定（Kconfig）
+
+| 選項                              | 預設 | 說明                          |
+| --------------------------------- | ---- | ----------------------------- |
+| `CONFIG_APP_INACTIVITY_SLEEP_MS`  | 5000 | 無操作多久後 power off（ms） |
+| `CONFIG_APP_HEARTBEAT_INTERVAL_MS`| 1000 | debug heartbeat log 間隔（ms）|
+
+---
+
+以下為原模板說明。
 
 ## 前置需求
 

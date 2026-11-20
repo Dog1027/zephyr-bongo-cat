@@ -30,7 +30,7 @@ static void button_cb(struct input_event *p_evt, void *user_data)
             }
             break;
         default:
-            break;
+            return; // Ignore other keys
         }
 
         k_msgq_put(&button_msgq, &b_evt, K_NO_WAIT);

@@ -4,7 +4,14 @@ config APP_HEARTBEAT_INTERVAL_MS
 	int "Heartbeat log interval (ms)"
 	default 1000
 	help
-	  Interval between heartbeat log messages printed by main().
+	  Interval between heartbeat (debug-level) log messages printed by main().
+
+config APP_INACTIVITY_SLEEP_MS
+	int "Inactivity time before power off (ms)"
+	default 5000
+	help
+	  The display is blanked and the system powers off after this long
+	  without any button activity. Pressing a button wakes it up again.
 
 endmenu
 
