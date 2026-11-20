@@ -1,0 +1,53 @@
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+    chosen {
+        zephyr,display = &oled;
+    };
+
+    aliases {
+    };
+
+    gpio_keys {
+        key1: key_left {
+            label = "LEFT";
+            gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+            zephyr,code = <INPUT_KEY_LEFT>;
+        };
+
+        key2: key_right {
+            label = "RIGHT";
+            gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+            zephyr,code = <INPUT_KEY_RIGHT>;
+        };
+    };
+};
+
+&i2c0 {
+    status = "okay";
+
+    oled: sh1106@3c {
+        status = "okay";
+        compatible = "sinowealth,sh1106";
+        reg = <0x3c>;
+
+        height = <64>;
+        width = <128>;
+
+        segment-offset = <2>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <63>;
+        prechargep = <0x22>;
+        segment-remap;
+        com-invdir;
+    };
+};
+
+&i2c0_default {
+    group1 {
+        pinmux = <I2C0_SDA_GPIO3>,
+                <I2C0_SCL_GPIO4>;
+    };
+};
+
