@@ -10,3 +10,9 @@ typedef enum {
 } button_event_t;
 
 int button_get(button_event_t *evt);
+
+/*
+ * If the system just woke from deep sleep because a key was pressed,
+ * queue that press so it counts as a tap.
+ */
+void button_replay_wakeup(void);

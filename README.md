@@ -1,7 +1,8 @@
 # Zephyr Bongo Cat
 
 在 ESP32-C3 SuperMini + 128×64 OLED 上跑的 Bongo Cat：按左／右鍵貓咪就拍桌、冒出愛心，
-畫面左上角累計拍擊次數。一段時間沒操作會關閉螢幕並 power off，按任一鍵喚醒。
+畫面左上角累計拍擊次數。一段時間沒操作會顯示 "Zzz" 後關閉螢幕並 power off，
+按任一鍵喚醒（喚醒的那一下也算一拍）。拍擊次數存在 flash（NVS），斷電也會保留。
 
 以 Zephyr + LVGL 實作，使用 [just](https://just.systems) 管理 build / flash。
 
@@ -23,14 +24,26 @@
 | `src/button.c` | Input callback → message queue                   |
 | `src/cat.c`    | 貓咪狀態機（idle / prep / 左拍 / 右拍 / 雙拍）   |
 | `src/heart.c`  | 愛心動畫與計數                                    |
-| `src/bitmap.c` | 所有 I1 格式圖檔                                  |
+| `src/storage.c`| 拍擊次數存取（NVS，`storage_partition`）          |
+| `src/bitmap.c` | 所有 A1 格式圖檔                                  |
 
 ## App 設定（Kconfig）
 
 | 選項                              | 預設 | 說明                          |
 | --------------------------------- | ---- | ----------------------------- |
-| `CONFIG_APP_INACTIVITY_SLEEP_MS`  | 5000 | 無操作多久後 power off（ms） |
+| `CONFIG_APP_INACTIVITY_SLEEP_MS`  | 30000 | 無操作多久後 power off（ms） |
+| `CONFIG_APP_HEART_STYLE`          | 0    | 愛心樣式 0–3（只編入選到的那組）|
 | `CONFIG_APP_HEARTBEAT_INTERVAL_MS`| 1000 | debug heartbeat log 間隔（ms）|
+
+## 實驗性：Light sleep
+
+```sh
+just build-pm     # 輸出到 ./build-pm，不影響一般的 build
+just flash-pm
+```
+
+設定在 `pm.conf` / `pm.overlay`。目前 ESP32-C3 的 light sleep 只能由 RTC timer 喚醒，
+按鍵要等下一次 timer 醒來才會處理；USB Serial/JTAG console 在睡眠時可能斷線。
 
 ---
 

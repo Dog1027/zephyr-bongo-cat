@@ -12,4 +12,5 @@ target_sources(app PRIVATE
   src/bitmap.c
   src/cat.c
   src/heart.c
+  src/storage.c
 )

@@ -1,0 +1,6 @@
+/* Used together with pm.conf (just build-pm). */
+
+&rtc_timer {
+    wakeup-source;
+    status = "okay";
+};

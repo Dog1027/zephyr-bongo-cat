@@ -8,10 +8,19 @@ config APP_HEARTBEAT_INTERVAL_MS
 
 config APP_INACTIVITY_SLEEP_MS
 	int "Inactivity time before power off (ms)"
-	default 5000
+	default 30000
 	help
 	  The display is blanked and the system powers off after this long
 	  without any button activity. Pressing a button wakes it up again.
+
+config APP_HEART_STYLE
+	int "Heart animation style"
+	default 0
+	range 0 3
+	help
+	  Which heart animation from bitmap.c to use. Only the selected
+	  style is compiled into the firmware. Style 3 has 10 frames,
+	  the others have 13.
 
 endmenu
 

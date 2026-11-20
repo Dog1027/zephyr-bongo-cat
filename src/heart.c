@@ -7,8 +7,7 @@
 LOG_MODULE_REGISTER(heart, LOG_LEVEL_INF);
 
 #define HEART_INTERVAL_MS 60
-/* Heart style 0-2 have 13 frames; style 3 only has 10 in bitmap.c. */
-#define HEART_TYPE 0
+#define HEART_TYPE CONFIG_APP_HEART_STYLE
 #define HEART_IMG(num) HEART_IMG_1(HEART_TYPE, num)
 #define HEART_IMG_1(type, num) HEART_IMG_2(type, num)
 #define HEART_IMG_2(type, num) heart_##type##_##num##_img
@@ -24,9 +23,12 @@ GET_IMG(HEART_IMG(7));
 GET_IMG(HEART_IMG(8));
 GET_IMG(HEART_IMG(9));
 GET_IMG(HEART_IMG(10));
+/* Style 3 only has 10 frames. */
+#if HEART_TYPE != 3
 GET_IMG(HEART_IMG(11));
 GET_IMG(HEART_IMG(12));
 GET_IMG(HEART_IMG(13));
+#endif
 
 static const lv_image_dsc_t *heart_img[] = {
     &HEART_IMG(1),
@@ -39,9 +41,11 @@ static const lv_image_dsc_t *heart_img[] = {
     &HEART_IMG(8),
     &HEART_IMG(9),
     &HEART_IMG(10),
+#if HEART_TYPE != 3
     &HEART_IMG(11),
     &HEART_IMG(12),
-    &HEART_IMG(13)
+    &HEART_IMG(13),
+#endif
 };
 
 typedef struct {
@@ -100,6 +104,11 @@ void heart_update(void)
             prev = &node->node;
         }
     }
+}
+
+void heart_set_count(uint32_t count)
+{
+    heart_count = count;
 }
 
 uint32_t heart_get_count(void)

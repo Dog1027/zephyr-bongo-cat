@@ -13,3 +13,11 @@ flash_args := "--esp-device " + port + " --esp-baud-rate " + baud
 # Open serial monitor
 monitor:
     cd {{build_dir}} && ZEPHYR_BASE={{workspace}}/zephyr uv run --no-project --python {{workspace}}/.venv west espressif monitor -p {{port}}
+
+# Experimental light sleep build (see pm.conf), in its own build dir so the
+# normal `just build` is unaffected. Flash it with `just flash-pm`.
+build-pm *args:
+    just build_dir={{topdir}}/build-pm build -- -DEXTRA_CONF_FILE={{topdir}}/pm.conf -DEXTRA_DTC_OVERLAY_FILE={{topdir}}/pm.overlay {{args}}
+
+flash-pm:
+    just build_dir={{topdir}}/build-pm flash
