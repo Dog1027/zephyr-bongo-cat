@@ -1,90 +1,120 @@
 # Zephyr Bongo Cat
 
-在 ESP32-C3 SuperMini + 128×64 OLED 上跑的 Bongo Cat：按左／右鍵貓咪就拍桌、冒出愛心，
-畫面左上角累計拍擊次數。
+A Bongo Cat for an ESP32-C3 SuperMini with a 128×64 OLED. Press the left or right
+key and the cat slaps the table, a heart pops up, and the counter in the top-left
+corner goes up.
 
-- 左右鍵可單拍或雙拍，每一拍冒一顆愛心
-- 一段時間沒操作會顯示 "Zzz"，接著關閉螢幕並進入 deep sleep
-- 按任一鍵喚醒，喚醒的那一下也算一拍
-- 拍擊次數存在 flash（NVS），斷電也會保留
+<p align="center">
+  <img src="docs/images/demo.gif" alt="Bongo Cat tapping on the OLED, with hearts and a tap counter" width="512">
+</p>
 
-以 Zephyr + LVGL 實作，使用 [just](https://just.systems) 管理 build / flash。
+- Single taps with either paw, or both paws at once
+- Each tap spawns an animated heart
+- After a period of inactivity it shows "Zzz", blanks the display, and enters deep sleep
+- Press any key to wake it up; the waking press counts as a tap too
+- The tap count is stored in flash (NVS), so it survives power loss
 
-## 硬體
+Built with Zephyr and LVGL, using [just](https://just.systems) for build and flash.
 
-| 元件                    | 腳位                      |
-| ----------------------- | ------------------------- |
-| ESP32-C3 SuperMini      |                           |
-| OLED SH1106 (I2C, 0x3C) | SDA = GPIO3, SCL = GPIO4  |
-| 左鍵                    | GPIO1（接 GND，內部上拉） |
-| 右鍵                    | GPIO2（接 GND，內部上拉） |
+> The images in this README are rendered from the bitmap data in `src/bitmap.c`
+> at 4× scale, so they show exactly what the firmware draws.
 
-I2C 跑在 400 kHz。腳位與螢幕設定見 `boards/esp32c3_supermini.overlay`。
+## Hardware
 
-## 前置需求
+| Part                    | Pins                                   |
+| ----------------------- | -------------------------------------- |
+| ESP32-C3 SuperMini      |                                        |
+| SH1106 OLED (I2C, 0x3C) | SDA = GPIO3, SCL = GPIO4               |
+| Left key                | GPIO1 to GND (internal pull-up)        |
+| Right key               | GPIO2 to GND (internal pull-up)        |
 
-- 一個 west workspace（預設 `~/Projects/zephyrproject`，含 `.venv`）
-  - 其他路徑：設定環境變數 `ZEPHYR_WORKSPACE`
+I2C runs at 400 kHz. Pins and display settings are in
+`boards/esp32c3_supermini.overlay`.
+
+## Requirements
+
+- A west workspace (default `~/Projects/zephyrproject`, with a `.venv`)
+  - Set `ZEPHYR_WORKSPACE` to use a different path
 - Zephyr SDK
-- `just`、`uv`
+- `just` and `uv`
 
-## 建置與燒錄
+## Build and flash
 
-先把 `justfile` 裡的 `port` 改成自己板子的序列埠（`/dev/serial/by-id/...`）。
+First set `port` in `justfile` to your board's serial port
+(`/dev/serial/by-id/...`).
 
 ```sh
-just build        # 建置（輸出到 ./build）
-just rebuild      # pristine 重建
+just build        # build into ./build
+just rebuild      # pristine rebuild
 just config       # menuconfig
-just flash        # 燒錄
-just monitor      # 序列埠監看
+just flash        # flash the board
+just monitor      # serial monitor
 just upload       # build + flash
 just run          # build + flash + monitor
 just clean
 ```
 
-額外參數可直接傳給 west build，例如 `just build -- -DCONFIG_APP_HEART_STYLE=2`。
+Extra arguments are passed through to `west build`, e.g.
+`just build -- -DCONFIG_APP_HEART_STYLE=2`.
 
-## 設定（Kconfig）
+## Configuration
 
-| 選項                               | 預設  | 說明                                   |
-| ---------------------------------- | ----- | -------------------------------------- |
-| `CONFIG_APP_INACTIVITY_SLEEP_MS`   | 30000 | 無操作多久後 power off（ms）           |
-| `CONFIG_APP_HEART_STYLE`           | 0     | 愛心樣式 0–3（只編入選到的那組）       |
-| `CONFIG_APP_HEARTBEAT_INTERVAL_MS` | 1000  | debug heartbeat log 間隔（ms）         |
+| Option                             | Default | Description                                       |
+| ---------------------------------- | ------- | ------------------------------------------------- |
+| `CONFIG_APP_INACTIVITY_SLEEP_MS`   | 30000   | Idle time before powering off (ms)                |
+| `CONFIG_APP_HEART_STYLE`           | 0       | Heart style 0–3 (only that style is compiled in)  |
+| `CONFIG_APP_HEARTBEAT_INTERVAL_MS` | 1000    | Debug heartbeat log interval (ms)                 |
 
-可以寫在 `prj.conf`，或用 `just config` 調整。
+Set them in `prj.conf` or with `just config`.
 
-## 程式結構
+### Heart styles
+
+One row per style, 0 to 3 from top to bottom. Style 3 has 10 frames, the others have 13.
+
+<p align="center">
+  <img src="docs/images/hearts.png" alt="Animation frames of the four heart styles" width="624">
+</p>
+
+## Cat poses
+
+Idle, left paw, right paw, and both paws:
+
+<p align="center">
+  <img src="docs/images/poses.png" alt="Cat poses: idle, left tap, right tap, both paws" width="520">
+</p>
+
+## Project layout
 
 ```
 .
 ├── CMakeLists.txt
-├── Kconfig                         # App 設定（CONFIG_APP_*）
-├── prj.conf                        # Kconfig 設定
-├── pm.conf / pm.overlay            # 實驗性 light sleep 設定
+├── Kconfig                         # app options (CONFIG_APP_*)
+├── prj.conf                        # Kconfig settings
+├── pm.conf / pm.overlay            # experimental light sleep
 ├── boards/
-│   └── esp32c3_supermini.overlay   # 螢幕、I2C、按鍵
+│   └── esp32c3_supermini.overlay   # display, I2C, keys
+├── docs/images/                    # README images
 ├── include/
 ├── src/
-│   ├── main.c      # 主迴圈：LVGL、閒置計時、power off
-│   ├── button.c    # Input callback → message queue、喚醒按鍵補拍
-│   ├── cat.c       # 貓咪狀態機（idle / prep / 左拍 / 右拍 / 雙拍）
-│   ├── heart.c     # 愛心動畫與計數
-│   ├── storage.c   # 拍擊次數存取（NVS，storage_partition）
-│   └── bitmap.c    # 所有 A1 格式圖檔
-├── zephyr.just     # 通用 recipes（不含板子資訊）
-└── justfile        # 本專案的板子 / port / flash 參數
+│   ├── main.c      # main loop: LVGL, inactivity timer, power off
+│   ├── button.c    # input callback -> message queue, wakeup key replay
+│   ├── cat.c       # cat state machine (idle / prep / left / right / both)
+│   ├── heart.c     # heart animation and tap counter
+│   ├── storage.c   # tap count persistence (NVS on storage_partition)
+│   └── bitmap.c    # all images, A1 format
+├── zephyr.just     # shared recipes (board-agnostic)
+└── justfile        # board, port, and flash settings for this project
 ```
 
-> 注意：只要 `boards/<board>.overlay` 存在，Zephyr 就**不會**讀 `app.overlay`。
+> Note: when `boards/<board>.overlay` exists, Zephyr does **not** read `app.overlay`.
 
-## 實驗性：Light sleep
+## Experimental: light sleep
 
 ```sh
-just build-pm     # 輸出到 ./build-pm，不影響一般的 build
+just build-pm     # builds into ./build-pm, separate from the normal build
 just flash-pm
 ```
 
-設定在 `pm.conf` / `pm.overlay`。目前 ESP32-C3 的 light sleep 只能由 RTC timer 喚醒，
-按鍵要等下一次 timer 醒來才會處理；USB Serial/JTAG console 在睡眠時可能斷線。
+The settings are in `pm.conf` and `pm.overlay`. On the ESP32-C3, light sleep
+currently only wakes on the RTC timer, so key presses are handled at the next
+timer wakeup, and the USB Serial/JTAG console may disconnect while sleeping.
