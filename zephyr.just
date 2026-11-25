@@ -42,9 +42,9 @@ flash: check-env
 monitor:
     @echo "No monitor configured — override 'monitor' in justfile." && exit 1
 
-# Remove build directory
+# Remove build directories (./build and ./build-*, e.g. build-pm)
 clean:
-    rm -rf {{build_dir}}
+    rm -rf {{build_dir}} {{topdir}}/build-*
 
 # Build and flash
 upload: build flash
