@@ -16,7 +16,7 @@ corner goes up.
 
 Built with Zephyr and LVGL, using [just](https://just.systems) for build and flash.
 
-> The images in this README are rendered from the bitmap data in `src/bitmap.c`
+> The images in this README are rendered from the bitmap data in `app/src/bitmap.c`
 > at 4× scale, so they show exactly what the firmware draws.
 
 ## Hardware
@@ -29,14 +29,36 @@ Built with Zephyr and LVGL, using [just](https://just.systems) for build and fla
 | Right key               | GPIO2 to GND (internal pull-up)        |
 
 I2C runs at 400 kHz. Pins and display settings are in
-`boards/esp32c3_supermini.overlay`.
+`app/boards/esp32c3_supermini.overlay`.
 
 ## Requirements
 
-- A west workspace (default `~/Projects/zephyrproject`, with a `.venv`)
-  - Set `ZEPHYR_WORKSPACE` to use a different path
-- Zephyr SDK
-- `just` and `uv`
+- Zephyr SDK, `west`, and [`just`](https://just.systems)
+- Or just open the repo in the dev container (`.devcontainer/`), which has all
+  of these and sets up the workspace for you
+
+## Setup
+
+This repo is a west manifest repo ([workspace application](https://docs.zephyrproject.org/latest/develop/west/workspaces.html#t2-star-topology-application-is-the-manifest-repository)):
+Zephyr and the modules it needs are pinned in `west.yml` and fetched next to it.
+
+```sh
+mkdir zephyr-ws && cd zephyr-ws
+git clone <this repo> zephyr-bongo-cat
+west init -l zephyr-bongo-cat
+west update
+west blobs fetch hal_espressif
+```
+
+The result looks like this:
+
+```
+zephyr-ws/
+├── .west/
+├── zephyr-bongo-cat/   # this repo
+├── zephyr/
+└── modules/hal/espressif, modules/lib/gui/lvgl
+```
 
 ## Build and flash
 
@@ -44,7 +66,7 @@ First set `port` in `justfile` to your board's serial port
 (`/dev/serial/by-id/...`).
 
 ```sh
-just build        # build into ./build
+just build        # build app/ into ./build
 just rebuild      # pristine rebuild
 just config       # menuconfig
 just flash        # flash the board
@@ -65,7 +87,7 @@ Extra arguments are passed through to `west build`, e.g.
 | `CONFIG_APP_HEART_STYLE`           | 0       | Heart style 0–3 (only that style is compiled in)  |
 | `CONFIG_APP_HEARTBEAT_INTERVAL_MS` | 1000    | Debug heartbeat log interval (ms)                 |
 
-Set them in `prj.conf` or with `just config`.
+Set them in `app/prj.conf` or with `just config`.
 
 ### Heart styles
 
@@ -87,23 +109,27 @@ Idle, left paw, right paw, and both paws:
 
 ```
 .
-├── CMakeLists.txt
-├── Kconfig                         # app options (CONFIG_APP_*)
-├── prj.conf                        # Kconfig settings
-├── pm.conf / pm.overlay            # experimental light sleep
-├── boards/
-│   └── esp32c3_supermini.overlay   # display, I2C, keys
-├── docs/images/                    # README images
-├── include/
-├── src/
-│   ├── main.c      # main loop: LVGL, inactivity timer, power off
-│   ├── button.c    # input callback -> message queue, wakeup key replay
-│   ├── cat.c       # cat state machine (idle / prep / left / right / both)
-│   ├── heart.c     # heart animation and tap counter
-│   ├── storage.c   # tap count persistence (NVS on storage_partition)
-│   └── bitmap.c    # all images, A1 format
-├── zephyr.just     # shared recipes (board-agnostic)
-└── justfile        # board, port, and flash settings for this project
+├── west.yml                            # west manifest: Zephyr revision + modules
+├── app/                                # the Zephyr application
+│   ├── CMakeLists.txt
+│   ├── Kconfig                         # app options (CONFIG_APP_*)
+│   ├── prj.conf                        # Kconfig settings
+│   ├── pm.conf / pm.overlay            # experimental light sleep
+│   ├── VERSION
+│   ├── boards/
+│   │   └── esp32c3_supermini.overlay   # display, I2C, keys
+│   ├── include/
+│   └── src/
+│       ├── main.c      # main loop: LVGL, inactivity timer, power off
+│       ├── button.c    # input callback -> message queue, wakeup key replay
+│       ├── cat.c       # cat state machine (idle / prep / left / right / both)
+│       ├── heart.c     # heart animation and tap counter
+│       ├── storage.c   # tap count persistence (NVS on storage_partition)
+│       └── bitmap.c    # all images, A1 format
+├── docs/images/        # README images
+├── .devcontainer/      # dev container + workspace setup script
+├── zephyr.just         # shared recipes (board-agnostic)
+└── justfile            # board, port, and flash settings for this project
 ```
 
 > Note: when `boards/<board>.overlay` exists, Zephyr does **not** read `app.overlay`.
@@ -115,6 +141,6 @@ just build-pm     # builds into ./build-pm, separate from the normal build
 just flash-pm
 ```
 
-The settings are in `pm.conf` and `pm.overlay`. On the ESP32-C3, light sleep
+The settings are in `app/pm.conf` and `app/pm.overlay`. On the ESP32-C3, light sleep
 currently only wakes on the RTC timer, so key presses are handled at the next
 timer wakeup, and the USB Serial/JTAG console may disconnect while sleeping.
