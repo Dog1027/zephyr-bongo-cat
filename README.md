@@ -62,12 +62,10 @@ zephyr-ws/
 
 ## Build and flash
 
-First set `port` in `justfile` to your board's serial port. Use the stable
-`/dev/serial/by-id/...` path, prefixed with `/host` when working in the dev container:
-
-```just
-port := "/host/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_<id>-if00"
-```
+`port` in `justfile` picks the first connected Espressif USB-Serial-JTAG device
+(`/host/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00`), so any
+ESP32-C3 board works without editing. With several boards plugged in, set `port`
+to the exact `/host/dev/serial/by-id/...` path instead.
 
 The dev container mounts the host's `/dev` live at `/host/dev`, so the board can be
 plugged in after the container starts, and the port keeps working when the ESP32-C3's

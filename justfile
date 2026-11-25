@@ -6,7 +6,10 @@ import "zephyr.just"
 # --- Board-specific settings (edit per project) ---
 board := "esp32c3_supermini/esp32c3"
 baud  := "921600"
-port  := "/host/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_9C:9E:6E:C2:FD:58-if00"
+# First connected Espressif USB-Serial-JTAG device (any serial ID). With several
+# boards plugged in, replace this with the exact /host/dev/serial/by-id/... path.
+# If none is connected, the pattern is left unexpanded and flash/monitor report it.
+port  := `p=(/host/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_*-if00); echo "${p[0]}"`
 
 flash_args := "--esp-device " + port + " --esp-baud-rate " + baud
 
